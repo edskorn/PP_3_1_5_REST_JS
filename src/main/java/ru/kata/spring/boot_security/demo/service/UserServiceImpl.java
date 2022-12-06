@@ -1,6 +1,5 @@
 package ru.kata.spring.boot_security.demo.service;
 
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import ru.kata.spring.boot_security.demo.model.Role;
 import ru.kata.spring.boot_security.demo.model.User;
@@ -57,12 +56,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Transactional
-    public User getUserById(long id) {
-        Optional<User> user = usersRepository.findById(id);
-        if (user.isEmpty()) {
-            throw new UsernameNotFoundException("Пользователь с таким id не найден");
-        }
-        return user.get();
+    public Optional<User> getUserById(long id) {
+        return usersRepository.findById(id);
     }
 
     @Transactional
