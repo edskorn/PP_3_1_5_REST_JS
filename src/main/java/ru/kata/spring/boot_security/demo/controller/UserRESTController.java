@@ -38,7 +38,8 @@ public class UserRESTController {
     @PostMapping("/users")
     public ResponseEntity<User> addUser(@RequestBody User user){
         userService.saveUser(user);
-        return new ResponseEntity<>(user, HttpStatus.OK);
+        User newUser = userService.getUserByUsername(user.getUsername()).get();
+        return new ResponseEntity<>(newUser, HttpStatus.OK);
     }
 
     @PutMapping("/users")

@@ -13,6 +13,56 @@
 </head>
 <body>
 
+<script th:inline="javascript">
+    async function userInfo(){
+        let response = await fetch("/api/users/" + [[${currentUser.id}]]);
+
+        if (response.ok) { // если HTTP-статус в диапазоне 200-299
+            let currentUser = await response.json();
+
+            window['currentUser-id'].innerText=currentUser.id;
+            window['currentUser-name'].innerText=currentUser.name;
+            window['currentUser-lastname'].innerText=currentUser.lastName;
+            window['currentUser-age'].innerText=currentUser.age;
+            window['currentUser-email'].innerText=currentUser.username;
+            window['currentUser-roles'].innerText=currentUser.rolesToString;
+        } else {
+            alert("Ошибка HTTP: " + response.status);
+        }
+    }
+
+    async function allUsersInfo(){
+        let response = await fetch("/api/users");
+
+        if (response.ok) {
+            let users = await response.json();
+
+            let tableUsers = document.getElementById('table-users');
+
+            for (let i = 0; i < users.length; i++) {
+                let trUsers = document.createElement('tr');
+
+                trUsers.innerHTML = '<td>' + users[i].id + '</td>';
+                trUsers.innerHTML += '<td>' + users[i].name + '</td>';
+                trUsers.innerHTML += '<td>' + users[i].lastName + '</td>';
+                trUsers.innerHTML += '<td>' + users[i].age + '</td>';
+                trUsers.innerHTML += '<td>' + users[i].username + '</td>';
+                trUsers.innerHTML += '<td>' + users[i].rolesToString + '</td>';
+                trUsers.innerHTML += '<td><button type="button" class="btn btn-info" datclassNamegle="modal" data-target="#edit-user-1">Edit</button></td>';
+                trUsers.innerHTML += '<td><button type="button" class="btn btn-danger" dclassNameoggle="modal" data-target="#delete-user-1">Delete</button></td>';
+
+                tableUsers.append(trUsers);
+            }
+        } else {
+            alert("Ошибка HTTP: " + response.status);
+        }
+    }
+    
+    userInfo();
+    allUsersInfo();
+
+</script>
+
 <div class="container-fluid p-0 m-0">
     <div class="row pt-0 pb-0 m-0">
         <!-- Navbar -->
@@ -78,25 +128,7 @@
                                                 <th scope="col">Delete</th>
                                             </tr>
                                             </thead>
-                                            <tbody>
-                                            <tr th:each="user : ${allUsers}">
-                                                <td th:text="${user.id}">id</td>
-                                                <td th:text="${user.name}">name</td>
-                                                <td th:text="${user.lastName}">lastName</td>
-                                                <td th:text="${user.age}">age</td>
-                                                <td th:text="${user.username}">email</td>
-                                                <td th:text="${user.getRolesToString()}">ROLE</td>
-                                                <td>
-                                                    <button type="button" class="btn btn-info" data-toggle="modal" th:data-target="'#edit-user-'+${user.id}">
-                                                        Edit
-                                                    </button>
-                                                </td>
-                                                <td>
-                                                    <button type="button" class="btn btn-danger" data-toggle="modal" th:data-target="'#delete-user-'+${user.id}">
-                                                        Delete
-                                                    </button>
-                                                </td>
-                                            </tr>
+                                            <tbody id="table-users">
                                             </tbody>
                                         </table>
                                     </div>
@@ -175,12 +207,12 @@
                                 </thead>
                                 <tbody>
                                 <tr>
-                                    <td th:text="${currentUser.id}">id</td>
-                                    <td th:text="${currentUser.name}">name</td>
-                                    <td th:text="${currentUser.lastName}">lastname</td>
-                                    <td th:text="${currentUser.age}">age</td>
-                                    <td th:text="${currentUser.username}">email</td>
-                                    <td th:text="${currentUser.getRolesToString()}">ROLE</td>
+                                    <td id="currentUser-id">id</td>
+                                    <td id="currentUser-name">name</td>
+                                    <td id="currentUser-lastname">lastname</td>
+                                    <td id="currentUser-age">age</td>
+                                    <td id="currentUser-email">email</td>
+                                    <td id="currentUser-roles">ROLE</td>
                                 </tr>
                                 </tbody>
                             </table>
