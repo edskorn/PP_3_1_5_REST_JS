@@ -49,8 +49,8 @@
                 trUsers.innerHTML += '<td>' + users[i].age + '</td>';
                 trUsers.innerHTML += '<td>' + users[i].username + '</td>';
                 trUsers.innerHTML += '<td>' + users[i].rolesToString + '</td>';
-                trUsers.innerHTML += '<td><button type="button" class="btn btn-info" data-toggle="modal" data-target="#edit-user-1">Edit</button></td>';
-                trUsers.innerHTML += '<td><button type="button" class="btn btn-danger" data-toggle="modal" data-target="#delete-user-1">Delete</button></td>';
+                trUsers.innerHTML += '<td><button type="button" class="btn btn-info" data-toggle="modal" data-target="#edit-user-modal">Edit</button></td>';
+                trUsers.innerHTML += `<td><button type="button" class="btn btn-danger" data-toggle="modal" data-target="#delete-user-modal" onclick="clickDelete(${users[i].id})">Delete</button></td>`;
 
                 tableUsers.append(trUsers);
             }
@@ -95,6 +95,33 @@
         addUser(json);
 
         event.target.reset();
+    }
+
+    async function clickDelete(id){
+        let response = await fetch("/api/users/" + id);
+
+        if (response.ok) { // если HTTP-статус в диапазоне 200-299
+            let currentUser = await response.json();
+
+            window['delete-user-id'].value=currentUser.id;
+            window['delete-user-name'].value=currentUser.name;
+            window['delete-user-lastname'].value=currentUser.lastName;
+            window['delete-user-age'].value=currentUser.age;
+            window['delete-user-email'].value=currentUser.username;
+            window['delete-user-confirm'].setAttribute('onclick', `clickDeleteConfirm(${id})`);
+        } else {
+            alert("Ошибка HTTP: " + response.status);
+        }
+    }
+
+    async function clickDeleteConfirm(id){
+        let response = await fetch("/api/users/" + id, {method: 'DELETE'});
+
+        if (response.ok) { // если HTTP-статус в диапазоне 200-299
+            updateWindowData();
+        } else {
+            alert("Ошибка HTTP: " + response.status);
+        }
     }
 
     function updateWindowData() {
@@ -287,11 +314,11 @@
 </div>
 
 <!-- Modal Delete -->
-<div th:each="user : ${allUsers}" class="modal fade" th:id="'delete-user-'+${user.id}" tabindex="-1" role="dialog" th:aria-labelledby="'delete-user-'+${user.id}+'-label'" aria-hidden="true">
+<div class="modal fade" id="delete-user-modal" tabindex="-1" role="dialog" aria-labelledby="delete-user-modal-label" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" th:id="'delete-user-'+${user.id}+'-label'">Delete user</h5>
+                <h5 class="modal-title" id="delete-user-modal-label">Delete user</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -300,27 +327,27 @@
                 <div class="container-fluid p-0 m-0">
                     <div class="row d-flex justify-content-center pt-0 pb-0 m-0">
                         <div class="col-md-6 p-0 m-0">
-                            <form>
+                            <form id="delete-user-form">
                                 <fieldset disabled>
                                     <div class="form-group">
-                                        <label th:for="'delete-user-'+${user.id}+'-id'" class="mb-0"><b>ID</b></label>
-                                        <input type="text" class="form-control" th:id="'delete-user-'+${user.id}+'-id'" th:placeholder="${user.id}">
+                                        <label for="delete-user-id" class="mb-0"><b>ID</b></label>
+                                        <input type="text" class="form-control" id="delete-user-id" placeholder="id">
                                     </div>
                                     <div class="form-group">
-                                        <label th:for="'delete-user-'+${user.id}+'-name'" class="mb-0"><b>First name</b></label>
-                                        <input type="text" class="form-control" th:id="'delete-user-'+${user.id}+'-name'" th:placeholder="${user.name}">
+                                        <label for="delete-user-name" class="mb-0"><b>First name</b></label>
+                                        <input type="text" class="form-control" id="delete-user-name" placeholder="name">
                                     </div>
                                     <div class="form-group">
-                                        <label th:for="'delete-user-'+${user.id}+'-last-name'" class="mb-0"><b>Last name</b></label>
-                                        <input type="text" class="form-control" th:id="'delete-user-'+${user.id}+'-last-name'" th:placeholder="${user.lastName}">
+                                        <label for="delete-user-lastname" class="mb-0"><b>Last name</b></label>
+                                        <input type="text" class="form-control" id="delete-user-lastname" placeholder="lastName">
                                     </div>
                                     <div class="form-group">
-                                        <label th:for="'delete-user-'+${user.id}+'-age'" class="mb-0"><b>Age</b></label>
-                                        <input type="number" class="form-control" th:id="'delete-user-'+${user.id}+'-age'" th:placeholder="${user.age}">
+                                        <label for="delete-user-age" class="mb-0"><b>Age</b></label>
+                                        <input type="number" class="form-control" id="delete-user-age" placeholder="age">
                                     </div>
                                     <div class="form-group">
-                                        <label th:for="'delete-user-'+${user.id}+'-email'" class="mb-0"><b>Email</b></label>
-                                        <input type="email" class="form-control" th:id="'delete-user-'+${user.id}+'-email'" th:placeholder="${user.username}">
+                                        <label for="delete-user-email" class="mb-0"><b>Email</b></label>
+                                        <input type="email" class="form-control" id="delete-user-email" placeholder="email">
                                     </div>
                                     <div class="form-group">
                                         <label for="delete-roles" class="mb-0"><b>Role</b></label>
@@ -339,7 +366,7 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" data-dismiss="modal">Close</button>
-                <a class="btn btn-danger" th:href="@{/deleteUser(userId=${user.getId()})}">Delete</a>
+                <button class="btn btn-danger" data-dismiss="modal" id="delete-user-confirm">Delete</button>
             </div>
         </div>
     </div>

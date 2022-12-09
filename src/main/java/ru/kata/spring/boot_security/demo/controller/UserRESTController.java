@@ -54,6 +54,7 @@ public class UserRESTController {
         if (user.isEmpty()){
             throw new RestException("User not found");
         }
+        userService.removeUserById(id);
         return new ResponseEntity<>("User with id=" + id + " deleted", HttpStatus.OK);
     }
 
