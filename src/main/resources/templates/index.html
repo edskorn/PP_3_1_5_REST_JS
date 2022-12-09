@@ -38,6 +38,7 @@
             let users = await response.json();
 
             let tableUsers = document.getElementById('table-users');
+            tableUsers.innerHTML = "";
 
             for (let i = 0; i < users.length; i++) {
                 let trUsers = document.createElement('tr');
@@ -48,8 +49,8 @@
                 trUsers.innerHTML += '<td>' + users[i].age + '</td>';
                 trUsers.innerHTML += '<td>' + users[i].username + '</td>';
                 trUsers.innerHTML += '<td>' + users[i].rolesToString + '</td>';
-                trUsers.innerHTML += '<td><button type="button" class="btn btn-info" datclassNamegle="modal" data-target="#edit-user-1">Edit</button></td>';
-                trUsers.innerHTML += '<td><button type="button" class="btn btn-danger" dclassNameoggle="modal" data-target="#delete-user-1">Delete</button></td>';
+                trUsers.innerHTML += '<td><button type="button" class="btn btn-info" data-toggle="modal" data-target="#edit-user-1">Edit</button></td>';
+                trUsers.innerHTML += '<td><button type="button" class="btn btn-danger" data-toggle="modal" data-target="#delete-user-1">Delete</button></td>';
 
                 tableUsers.append(trUsers);
             }
@@ -57,9 +58,70 @@
             alert("Ошибка HTTP: " + response.status);
         }
     }
-    
-    userInfo();
-    allUsersInfo();
+
+    async function addUser(user){
+        let response = await fetch("/api/users", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json;charset=utf-8'
+            },
+            body: user
+        });
+
+        let result = await response.json();
+        updateWindowData();
+    }
+
+    function handleSubmit(event) {
+        event.preventDefault();
+
+        const formData = new FormData(event.target);
+
+        let object = {};
+        formData.forEach((value, key) => {
+            if(!Reflect.has(object, key)){
+                object[key] = value;
+                return;
+            }
+            if(!Array.isArray(object[key])){
+                object[key] = [object[key]];
+            }
+            object[key].push(value);
+        });
+        let json = JSON.stringify(object);
+
+        //console.log({ json });
+
+        addUser(json);
+
+        event.target.reset();
+    }
+
+    function updateWindowData() {
+        userInfo();
+        allUsersInfo();
+
+        let allUsersTab = document.getElementById('all-users-tab');
+        let newUserTab = document.getElementById('new-user-tab');
+
+        allUsersTab.classList.add('active');
+        newUserTab.classList.remove('active');
+
+        let allUsersTabLink = document.getElementById('all-users-tab-link');
+        let newUserTabLink = document.getElementById('new-user-tab-link');
+
+        allUsersTabLink.classList.add('active');
+        newUserTabLink.classList.remove('active');
+
+    }
+
+    window.onload=function(){
+        const newUserForm = document.getElementById('new-user-form');
+        newUserForm.addEventListener('submit', handleSubmit);
+
+        updateWindowData();
+    }
+
 
 </script>
 
@@ -101,15 +163,15 @@
                     <div class="tabbable" id="tabs-972471">
                         <ul class="nav nav-tabs">
                             <li class="nav-item">
-                                <a class="nav-link active show" href="#tab1" data-toggle="tab">Users table</a>
+                                <a id="all-users-tab-link" class="nav-link active show"  href="#all-users-tab" data-toggle="tab">Users table</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="#tab2" data-toggle="tab">New User</a>
+                                <a id="new-user-tab-link" class="nav-link" href="#new-user-tab" data-toggle="tab">New User</a>
                             </li>
                         </ul>
                         <div class="tab-content">
                             <!-- Users table -->
-                            <div class="tab-pane active" id="tab1">
+                            <div class="tab-pane active" id="all-users-tab">
                                 <div class="card">
                                     <div class="card-header">
                                         <b>All users</b>
@@ -135,7 +197,7 @@
                                 </div>
                             </div>
                             <!-- New user -->
-                            <div class="tab-pane" id="tab2">
+                            <div class="tab-pane" id="new-user-tab">
                                 <div class="card">
                                     <div class="card-header">
                                         <b>Add new user</b>
@@ -144,7 +206,7 @@
                                         <div class="container-fluid p-0 m-0">
                                             <div class="row d-flex justify-content-center pt-0 pb-0 m-0">
                                                 <div class="col-md-4 p-0 m-0">
-                                                    <form th:action="@{/saveUser}" th:object="${newUser}">
+                                                    <form id="new-user-form" th:object="${newUser}">
                                                         <div class="form-group">
                                                             <label for="input-first-name" class="mb-0"><b>First name</b></label>
                                                             <input type="text" class="form-control" id="input-first-name" name="name" placeholder="First name" th:value="${newUser.name}">
