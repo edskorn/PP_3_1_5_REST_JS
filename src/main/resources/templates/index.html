@@ -49,7 +49,7 @@
                 trUsers.innerHTML += '<td>' + users[i].age + '</td>';
                 trUsers.innerHTML += '<td>' + users[i].username + '</td>';
                 trUsers.innerHTML += '<td>' + users[i].rolesToString + '</td>';
-                trUsers.innerHTML += '<td><button type="button" class="btn btn-info" data-toggle="modal" data-target="#edit-user-modal">Edit</button></td>';
+                trUsers.innerHTML += `<td><button type="button" class="btn btn-info" data-toggle="modal" data-target="#edit-user-modal" onclick="clickEdit(${users[i].id})">Edit</button></td>`;
                 trUsers.innerHTML += `<td><button type="button" class="btn btn-danger" data-toggle="modal" data-target="#delete-user-modal" onclick="clickDelete(${users[i].id})">Delete</button></td>`;
 
                 tableUsers.append(trUsers);
@@ -97,6 +97,19 @@
         event.target.reset();
     }
 
+    async function editUser(user){
+        let response = await fetch("/api/users", {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json;charset=utf-8'
+            },
+            body: user
+        });
+
+        let result = await response.json();
+        updateWindowData();
+    }
+
     async function clickDelete(id){
         let response = await fetch("/api/users/" + id);
 
@@ -122,6 +135,46 @@
         } else {
             alert("Ошибка HTTP: " + response.status);
         }
+    }
+
+    async function clickEdit(id){
+        let response = await fetch("/api/users/" + id);
+
+        if (response.ok) { // если HTTP-статус в диапазоне 200-299
+            let currentUser = await response.json();
+
+            window['edit-user-id'].value=currentUser.id;
+            window['edit-user-name'].value=currentUser.name;
+            window['edit-user-lastname'].value=currentUser.lastName;
+            window['edit-user-age'].value=currentUser.age;
+            window['edit-user-email'].value=currentUser.username;
+        } else {
+            alert("Ошибка HTTP: " + response.status);
+        }
+    }
+
+    function clickEditConfirm() {
+        let form = document.getElementById('edit-user-form');
+        const formData = new FormData(form);
+
+        let object = {};
+        formData.forEach((value, key) => {
+            if(!Reflect.has(object, key)){
+                object[key] = value;
+                return;
+            }
+            if(!Array.isArray(object[key])){
+                object[key] = [object[key]];
+            }
+            object[key].push(value);
+        });
+        let json = JSON.stringify(object);
+
+        console.log({ json });
+
+        editUser(json);
+
+        form.reset();
     }
 
     function updateWindowData() {
@@ -373,11 +426,11 @@
 </div>
 
 <!-- Modal Edit -->
-<div th:each="user : ${allUsers}" class="modal fade" th:id="'edit-user-'+${user.id}" tabindex="-1" role="dialog" th:aria-labelledby="'edit-user-'+${user.id}+'-label'" aria-hidden="true">
+<div class="modal fade" id="edit-user-modal" tabindex="-1" role="dialog" aria-labelledby="edit-user-modal-label" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" th:id="'edit-user-'+${user.id}+'-label'">Edit user</h5>
+                <h5 class="modal-title" id="edit-user-modal-label">Edit user</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -386,35 +439,35 @@
                 <div class="container-fluid p-0 m-0">
                     <div class="row d-flex justify-content-center pt-0 pb-0 m-0">
                         <div class="col-md-6 p-0 m-0">
-                            <form th:id="'edit-user-'+${user.id}+'-form'" th:action="@{/updateUser}" th:object="${user}">
+                            <form id="edit-user-form">
                                 <fieldset>
                                     <div class="form-group">
-                                        <label th:for="'edit-user-'+${user.id}+'-id'" class="mb-0"><b>ID</b></label>
-                                        <input readonly type="text" class="form-control" name="id" th:id="'edit-user-'+${user.id}+'-id'" th:value="${user.id}" th:placeholder="ID">
+                                        <label for="edit-user-id" class="mb-0"><b>ID</b></label>
+                                        <input readonly type="text" class="form-control" name="id" id="edit-user-id" placeholder="ID">
                                     </div>
                                     <div class="form-group">
-                                        <label th:for="'edit-user-'+${user.id}+'-name'" class="mb-0"><b>First name</b></label>
-                                        <input type="text" class="form-control" name="name" th:id="'edit-user-'+${user.id}+'-name'" th:value="${user.name}" placeholder="First name">
+                                        <label for="edit-user-name" class="mb-0"><b>First name</b></label>
+                                        <input type="text" class="form-control" name="name" id="edit-user-name" placeholder="First name">
                                     </div>
                                     <div class="form-group">
-                                        <label th:for="'edit-user-'+${user.id}+'-last-name'" class="mb-0"><b>Last name</b></label>
-                                        <input type="text" class="form-control" name="lastName" th:id="'edit-user-'+${user.id}+'-last-name'" th:value="${user.lastName}" placeholder="Last name">
+                                        <label for="edit-user-lastname" class="mb-0"><b>Last name</b></label>
+                                        <input type="text" class="form-control" name="lastName" id="edit-user-lastname" placeholder="Last name">
                                     </div>
                                     <div class="form-group">
-                                        <label th:for="'edit-user-'+${user.id}+'-age'" class="mb-0"><b>Age</b></label>
-                                        <input type="number" class="form-control" name="age" th:id="'edit-user-'+${user.id}+'-age'" th:value="${user.age}" placeholder="Age">
+                                        <label for="edit-user-age" class="mb-0"><b>Age</b></label>
+                                        <input type="number" class="form-control" name="age" id="edit-user-age" placeholder="Age">
                                     </div>
                                     <div class="form-group">
-                                        <label th:for="'edit-user-'+${user.id}+'-email'" class="mb-0"><b>Email</b></label>
-                                        <input type="email" class="form-control" name="username" th:id="'edit-user-'+${user.id}+'-email'" th:value="${user.username}" placeholder="Email">
+                                        <label for="edit-user-email" class="mb-0"><b>Email</b></label>
+                                        <input type="email" class="form-control" name="username" id="edit-user-email" placeholder="Email">
                                     </div>
                                     <div class="form-group">
-                                        <label th:for="'edit-user-'+${user.id}+'-password'" class="mb-0"><b>Password</b></label>
-                                        <input type="password" class="form-control" name="password" th:id="'edit-user-'+${user.id}+'-password'" placeholder="Password">
+                                        <label for="edit-user-password" class="mb-0"><b>Password</b></label>
+                                        <input type="password" class="form-control" name="password" id="edit-user-password" placeholder="Password">
                                     </div>
                                     <div class="form-group">
                                         <label for="edit-roles" class="mb-0"><b>Role</b></label>
-                                        <select multiple class="form-control" th:size="${allRoles.size()}" style="height: 100%;" id="edit-roles" name="roles" th:field="*{roles}">
+                                        <select multiple class="form-control" th:size="${allRoles.size()}" style="height: 100%;" id="edit-roles" name="roles">
                                             <option th:each="role : ${allRoles}"
                                                     th:text="${role.name}"
                                                     th:value="${role.id}"
@@ -428,8 +481,8 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                <button th:form="'edit-user-'+${user.id}+'-form'" type="submit" class="btn btn-primary">Edit</button>
+                <button class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button class="btn btn-primary" data-dismiss="modal" onclick="clickEditConfirm()">Edit</button>
             </div>
         </div>
     </div>
