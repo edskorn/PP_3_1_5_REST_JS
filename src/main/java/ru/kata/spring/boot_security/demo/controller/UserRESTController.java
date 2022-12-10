@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.kata.spring.boot_security.demo.exception_handling.RestException;
+import ru.kata.spring.boot_security.demo.model.Role;
 import ru.kata.spring.boot_security.demo.model.User;
 import ru.kata.spring.boot_security.demo.service.UserService;
 
@@ -24,6 +25,11 @@ public class UserRESTController {
     @GetMapping("/users")
     public ResponseEntity<List<User>> showAll(){
         return new ResponseEntity<>(userService.getAllUsers(), HttpStatus.OK);
+    }
+
+    @GetMapping("/roles")
+    public ResponseEntity<List<Role>> getAllRoles(){
+        return new ResponseEntity<>(userService.getAllRoles(), HttpStatus.OK);
     }
 
     @GetMapping("/users/{id}")

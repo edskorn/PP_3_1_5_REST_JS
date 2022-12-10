@@ -14,6 +14,69 @@
 <body>
 
 <script th:inline="javascript">
+    let allRoles;
+
+    function getRoleName(id) {
+        for (let i=0; i<allRoles.length; i++) {
+            if (allRoles[i].id == id) {
+                return allRoles[i].name;
+            }
+        }
+    }
+
+    async function getAllRoles(){
+        let response = await fetch("/api/roles");
+
+        if (response.ok) {
+            allRoles = await response.json();
+            fillRoles('add-user-roles');
+            fillRoles('delete-user-roles');
+            fillRoles('edit-user-roles');
+        } else {
+            alert("Ошибка HTTP: " + response.status);
+        }
+    }
+
+    function fillRoles(selectRolesElemName) {
+        let selectRolesElem = document.getElementById(selectRolesElemName);
+        selectRolesElem.setAttribute('size', allRoles.length);
+
+        for (let i=0; i<allRoles.length; i++) {
+            let optionRole = document.createElement('option');
+            optionRole.setAttribute('value', allRoles[i].id);
+            optionRole.innerText = allRoles[i].name;
+            selectRolesElem.append(optionRole);
+        }
+    }
+
+    function parseUserFormToJSON(form){
+        const formData = new FormData(form);
+
+        let object = {};
+        formData.forEach((value, key) => {
+            if (key==="roles"){
+                if(!Reflect.has(object, key)) {
+                    object[key] = [{"id": value, "name": getRoleName(value)}];
+                } else {
+                    object[key].push({"id": value, "name": getRoleName(value)})
+                }
+            } else {
+                if(!Reflect.has(object, key)){
+                    object[key] = value;
+                    return;
+                }
+                if(!Array.isArray(object[key])){
+                    object[key] = [object[key]];
+                }
+                object[key].push(value);
+            }
+        });
+
+        form.reset();
+
+        return JSON.stringify(object);
+    }
+
     async function userInfo(){
         let response = await fetch("/api/users/" + [[${currentUser.id}]]);
 
@@ -68,46 +131,16 @@
             body: user
         });
 
-        let result = await response.json();
+        //let result = await response.json();
         updateWindowData();
     }
 
-    function handleSubmit(event) {
+    function handleSubmitAddUser(event) {
         event.preventDefault();
 
-        const formData = new FormData(event.target);
+        let user = parseUserFormToJSON(event.target);
 
-        let object = {};
-        formData.forEach((value, key) => {
-            if(!Reflect.has(object, key)){
-                object[key] = value;
-                return;
-            }
-            if(!Array.isArray(object[key])){
-                object[key] = [object[key]];
-            }
-            object[key].push(value);
-        });
-        let json = JSON.stringify(object);
-
-        //console.log({ json });
-
-        addUser(json);
-
-        event.target.reset();
-    }
-
-    async function editUser(user){
-        let response = await fetch("/api/users", {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json;charset=utf-8'
-            },
-            body: user
-        });
-
-        let result = await response.json();
-        updateWindowData();
+        addUser(user);
     }
 
     async function clickDelete(id){
@@ -141,40 +174,33 @@
         let response = await fetch("/api/users/" + id);
 
         if (response.ok) { // если HTTP-статус в диапазоне 200-299
-            let currentUser = await response.json();
+            let editUser = await response.json();
 
-            window['edit-user-id'].value=currentUser.id;
-            window['edit-user-name'].value=currentUser.name;
-            window['edit-user-lastname'].value=currentUser.lastName;
-            window['edit-user-age'].value=currentUser.age;
-            window['edit-user-email'].value=currentUser.username;
+            window['edit-user-id'].value=editUser.id;
+            window['edit-user-name'].value=editUser.name;
+            window['edit-user-lastname'].value=editUser.lastName;
+            window['edit-user-age'].value=editUser.age;
+            window['edit-user-email'].value=editUser.username;
         } else {
             alert("Ошибка HTTP: " + response.status);
         }
     }
 
-    function clickEditConfirm() {
+    async function clickEditConfirm() {
         let form = document.getElementById('edit-user-form');
-        const formData = new FormData(form);
+        let user = parseUserFormToJSON(form);
 
-        let object = {};
-        formData.forEach((value, key) => {
-            if(!Reflect.has(object, key)){
-                object[key] = value;
-                return;
-            }
-            if(!Array.isArray(object[key])){
-                object[key] = [object[key]];
-            }
-            object[key].push(value);
+        let response = await fetch("/api/users", {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json;charset=utf-8'
+            },
+            body: user
         });
-        let json = JSON.stringify(object);
 
-        console.log({ json });
+        //let result = await response.json();
 
-        editUser(json);
-
-        form.reset();
+        updateWindowData();
     }
 
     function updateWindowData() {
@@ -192,12 +218,13 @@
 
         allUsersTabLink.classList.add('active');
         newUserTabLink.classList.remove('active');
-
     }
 
     window.onload=function(){
         const newUserForm = document.getElementById('new-user-form');
-        newUserForm.addEventListener('submit', handleSubmit);
+        newUserForm.addEventListener('submit', handleSubmitAddUser);
+
+        getAllRoles();
 
         updateWindowData();
     }
@@ -212,7 +239,9 @@
             <nav class="navbar navbar-expand-lg navbar-dark bg-dark pt-0 pb-0">
                 <span class="navbar-brand font-weight-bold mr-1" sec:authentication="name">admin@mail.ru</span>
                 <span class="navbar-brand mr-1">with roles:</span>
-                <span class="navbar-brand" th:text="${currentUser.getRolesToString()}">ADMIN USER</span>
+                <span class="navbar-brand mr-1" th:each="authority : ${#authentication.getAuthorities()}"
+                      th:if="${authority.getAuthority().startsWith('ROLE_')}"
+                      th:text="${authority.getAuthority().replaceFirst('ROLE_', '')}">USER</span>
                 <div class="collapse navbar-collapse pt-1 pb-1" id="navbarText">
                     <ul class="navbar-nav mr-auto">
                     </ul>
@@ -308,13 +337,8 @@
                                                             <input type="password" class="form-control" id="input-password" name="password" placeholder="Password">
                                                         </div>
                                                         <div class="form-group">
-                                                            <label for="select-roles" class="mb-0"><b>Role</b></label>
-                                                            <select multiple class="form-control" th:size="${allRoles.size()}" style="height: 100%;" id="select-roles" name="roles" th:field="*{roles}">
-                                                                <option th:each="role : ${allRoles}"
-                                                                        th:text="${role.name}"
-                                                                        th:value="${role.id}"
-                                                                        ></option>
-                                                            </select>
+                                                            <label for="add-user-roles" class="mb-0"><b>Role</b></label>
+                                                            <select multiple class="form-control" style="height: 100%;" id="add-user-roles" name="roles"></select>
                                                         </div>
                                                         <button type="submit" class="btn btn-success">Add new user</button>
                                                     </form>
@@ -403,13 +427,8 @@
                                         <input type="email" class="form-control" id="delete-user-email" placeholder="email">
                                     </div>
                                     <div class="form-group">
-                                        <label for="delete-roles" class="mb-0"><b>Role</b></label>
-                                        <select multiple class="form-control" th:size="${allRoles.size()}" style="height: 100%;" id="delete-roles" name="roles">
-                                            <option th:each="role : ${allRoles}"
-                                                    th:text="${role.name}"
-                                                    th:value="${role.id}"
-                                            ></option>
-                                        </select>
+                                        <label for="delete-user-roles" class="mb-0"><b>Role</b></label>
+                                        <select multiple class="form-control" style="height: 100%;" id="delete-user-roles" name="roles"></select>
                                     </div>
                                 </fieldset>
                             </form>
@@ -466,13 +485,8 @@
                                         <input type="password" class="form-control" name="password" id="edit-user-password" placeholder="Password">
                                     </div>
                                     <div class="form-group">
-                                        <label for="edit-roles" class="mb-0"><b>Role</b></label>
-                                        <select multiple class="form-control" th:size="${allRoles.size()}" style="height: 100%;" id="edit-roles" name="roles">
-                                            <option th:each="role : ${allRoles}"
-                                                    th:text="${role.name}"
-                                                    th:value="${role.id}"
-                                            ></option>
-                                        </select>
+                                        <label for="edit-user-roles" class="mb-0"><b>Role</b></label>
+                                        <select multiple class="form-control" style="height: 100%;" id="edit-user-roles" name="roles"></select>
                                     </div>
                                 </fieldset>
                             </form>
