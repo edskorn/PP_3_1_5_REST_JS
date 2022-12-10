@@ -10,6 +10,7 @@ function getRoleName(id) {
     }
 }
 
+//REST GET all roles and fill all forms with roles
 async function getAllRoles(){
     let response = await fetch("/api/roles");
 
@@ -19,10 +20,11 @@ async function getAllRoles(){
         fillRoles('delete-user-roles');
         fillRoles('edit-user-roles');
     } else {
-        alert("Ошибка HTTP: " + response.status);
+        alert("HTTP error: " + response.status);
     }
 }
 
+//fill Roles for specific select-element
 function fillRoles(selectRolesElemName) {
     let selectRolesElem = document.getElementById(selectRolesElemName);
 
@@ -38,6 +40,7 @@ function fillRoles(selectRolesElemName) {
     }
 }
 
+//parse specific form with User data to JSON
 function parseUserFormToJSON(form){
     const formData = new FormData(form);
 
@@ -66,6 +69,7 @@ function parseUserFormToJSON(form){
     return JSON.stringify(object);
 }
 
+//REST GET user info and fill table User Info
 async function userInfo(currentUserId){
     let response = await fetch("/api/users/" + currentUserId);
 
@@ -79,10 +83,11 @@ async function userInfo(currentUserId){
         window['currentUser-email'].innerText=currentUser.username;
         window['currentUser-roles'].innerText=currentUser.rolesToString;
     } else {
-        alert("Ошибка HTTP: " + response.status);
+        alert("HTTP error: " + response.status);
     }
 }
 
+//REST GET all users and fill table All Users
 async function allUsersInfo(){
     let response = await fetch("/api/users");
 
@@ -107,10 +112,11 @@ async function allUsersInfo(){
             tableUsers.append(trUsers);
         }
     } else {
-        alert("Ошибка HTTP: " + response.status);
+        alert("HTTP error: " + response.status);
     }
 }
 
+//REST POST add new user
 async function addUser(user){
     let response = await fetch("/api/users", {
         method: 'POST',
@@ -120,18 +126,25 @@ async function addUser(user){
         body: user
     });
 
-    //let result = await response.json();
+    let result = await response.json();
+    if (response.ok) {
+        console.log("add user result: " + result.message);
+    } else {
+        console.log("need to handle errors: " + result.message);
+        alert("need to handle errors: " + result.message);
+    }
+
     updateWindowData();
 }
 
+//Handle of submitting add user
 function handleSubmitAddUser(event) {
     event.preventDefault();
-
     let user = parseUserFormToJSON(event.target);
-
     addUser(user);
 }
 
+//REST GET user info and fill Modal DELETE
 async function clickDelete(id){
     let response = await fetch("/api/users/" + id);
 
@@ -145,20 +158,24 @@ async function clickDelete(id){
         window['delete-user-email'].value=currentUser.username;
         window['delete-user-confirm'].setAttribute('onclick', `clickDeleteConfirm(${id})`);
     } else {
-        alert("Ошибка HTTP: " + response.status);
+        alert("HTTP error: " + response.status);
     }
 }
 
+//REST DELETE
 async function clickDeleteConfirm(id){
     let response = await fetch("/api/users/" + id, {method: 'DELETE'});
 
     if (response.ok) { // если HTTP-статус в диапазоне 200-299
         updateWindowData();
+        let result = await response.json();
+        console.log("delete user result: " + result);
     } else {
-        alert("Ошибка HTTP: " + response.status);
+        alert("HTTP error: " + response.status);
     }
 }
 
+//REST GET user info and fill Modal EDIT
 async function clickEdit(id){
     let response = await fetch("/api/users/" + id);
 
@@ -171,10 +188,11 @@ async function clickEdit(id){
         window['edit-user-age'].value=editUser.age;
         window['edit-user-email'].value=editUser.username;
     } else {
-        alert("Ошибка HTTP: " + response.status);
+        alert("HTTP error: " + response.status);
     }
 }
 
+//REST PUT, handle of submitting edit user
 async function clickEditConfirm() {
     let form = document.getElementById('edit-user-form');
     let user = parseUserFormToJSON(form);
@@ -187,7 +205,13 @@ async function clickEditConfirm() {
         body: user
     });
 
-    //let result = await response.json();
+    let result = await response.json();
+    if (response.ok) {
+        console.log("edit user result: " + result.message);
+    } else {
+        console.log("need to handle errors: " + result.message);
+        alert("need to handle errors: " + result.message);
+    }
 
     updateWindowData();
 }
